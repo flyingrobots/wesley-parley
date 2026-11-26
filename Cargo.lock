@@ -1180,7 +1180,7 @@ dependencies = [
 [[package]]
 name = "wesley-typescript-syntax"
 version = "0.1.0"
-source = "git+https://github.com/flyingrobots/wesley-typescript?branch=syntax-crate#c2c77ac3a64401ef974e1fec693891025173a0ef"
+source = "git+https://github.com/flyingrobots/wesley-typescript?rev=dca0cd373eaa7f1902fd49529103b219b41d54fa#dca0cd373eaa7f1902fd49529103b219b41d54fa"
 dependencies = [
  "swc_atoms",
  "swc_common",
