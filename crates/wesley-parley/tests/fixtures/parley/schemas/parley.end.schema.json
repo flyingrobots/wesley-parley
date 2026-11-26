@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.end/1.0.0",
+  "title": "parley end",
+  "description": "The terminal event of a run that bootstrapped: written to stdout and to the receipt as one event. Its seq is the run's final sequence number (spec \u00a73.3).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "status",
+    "receipt",
+    "redacted",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "end"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "status": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "not": {
+        "const": 3
+      },
+      "description": "The exit status the process is about to exit with (spec \u00a73.4); never 3, since a run that could not bootstrap has no end."
+    },
+    "receipt": {
+      "type": "string",
+      "pattern": "^/",
+      "minLength": 2,
+      "description": "The receipt path, absolute, as the bootstrap line declared it."
+    },
+    "redacted": {
+      "type": "boolean",
+      "description": "True exactly when the head carries redacted or any redaction event was emitted (spec \u00a73.3)."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.end"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

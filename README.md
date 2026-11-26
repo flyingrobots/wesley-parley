@@ -6,7 +6,17 @@ Wesley compiles GraphQL SDL into an intermediate representation (IR), and does n
 
 ## Status
 
-Not started. This repository holds the plan and its rules; the first code waits on the versioned IR contract (flyingrobots/wesley#881).
+The JSON Schema half of the MVP exists, in `crates/wesley-parley`:
+
+- **`vocab`** interprets the `@parley_*` directives of a Parley SDL (as lowered by Wesley) into a **`model::Catalog`**: every message, object, field, constraint and cross-field rule, checked. It refuses what it cannot render faithfully and names the type, field and directive. It is a port of Parley's own derivation (flyingrobots/parley `scripts/sdl-to-json-schema.ts` at `c80771c`), with its refusal tests.
+- **`json_schema`** renders each message's schema from the model and prints it with [wesley-json-schema](https://github.com/flyingrobots/wesley-json-schema)'s canonical printer.
+- **The `wesley-parley` binary**: `json-schema --out DIR` writes `<id>.schema.json` per message; `model` prints the interpreted model as JSON, for renderers in other languages.
+
+```sh
+wesley schema lower --schema schemas/parley.graphql --json | wesley-parley json-schema --out schemas/
+```
+
+**Parley's real SDL, lowered by the published Wesley 0.3.0-alpha.4, reproduces all 17 of Parley's hand-written message schemas as JSON values** (the test fails naming each difference as a JSON Pointer). That is the condition flyingrobots/parley#119 needs to make the SDL the source. TypeScript, Rust and Python bindings (flyingrobots/parley#120, #123, #121) come next, through the generic targets.
 
 ## Where it comes from
 

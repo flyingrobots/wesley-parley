@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.command/1.0.0",
+  "title": "parley command",
+  "description": "A command's description: name, intent, declared effects, declared secrets and the message types it can emit (spec \u00a74.1 to \u00a74.3). Emitted by --schema and --help.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "name",
+    "intent",
+    "effects",
+    "secrets",
+    "emits",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "command"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One line: what question the command answers."
+    },
+    "effects": {
+      "type": "object",
+      "required": [
+        "reads",
+        "writes",
+        "network",
+        "idempotent",
+        "bookkeeping"
+      ],
+      "properties": {
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "writes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Subject-matter writes only (spec \u00a74.3)."
+        },
+        "network": {
+          "type": "boolean"
+        },
+        "idempotent": {
+          "type": "boolean"
+        },
+        "bookkeeping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "op",
+              "scope"
+            ],
+            "properties": {
+              "op": {
+                "enum": [
+                  "create",
+                  "append",
+                  "delete"
+                ]
+              },
+              "scope": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "description": "Evidence writes: receipts, sidecars, the local ignore file, retention (spec \u00a74.3)."
+        }
+      }
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Arguments by flag, environment variables by name, and credential sources by logical name, whose values are secrets (spec \u00a74.3, \u00a75.3)."
+    },
+    "emits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+          }
+        }
+      },
+      "description": "Message types this command can emit, by exact (id, version)."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.command"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

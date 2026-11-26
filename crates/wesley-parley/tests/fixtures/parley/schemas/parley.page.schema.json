@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.page/1.0.0",
+  "title": "parley page",
+  "description": "One page of unbounded output; cursor required when has_more is true (spec \u00a77.2).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "has_more",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "page"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "cursor": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque to the caller."
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.page"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  },
+  "if": {
+    "type": "object",
+    "properties": {
+      "has_more": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "type": "object",
+    "required": [
+      "cursor"
+    ],
+    "properties": {
+      "cursor": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+[package]
+name = "wesley-parley"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Wesley target for Parley: interprets Parley's @parley_* directives and renders Parley's message schemas and bindings"
+license = "Apache-2.0"
+readme = "../../README.md"
+repository = "https://github.com/flyingrobots/wesley-parley"
+homepage = "https://github.com/flyingrobots/wesley-parley#readme"
+keywords = ["graphql", "parley", "json-schema", "codegen", "wesley"]
+categories = ["compilers"]
+
+[lib]
+name = "wesley_parley"
+
+[[bin]]
+name = "wesley-parley"
+path = "src/main.rs"
+
+[dependencies]
+indexmap = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+thiserror = "2.0"
+wesley-core = { version = "=0.3.0-alpha.4", default-features = false }
+wesley-json-schema = { git = "https://github.com/flyingrobots/wesley-json-schema", branch = "mvp" }
+
+[dev-dependencies]
+pretty_assertions = "1.4"

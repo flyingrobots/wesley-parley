@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.receipt.inputs/1.0.0",
+  "title": "parley receipt inputs",
+  "description": "The metadata-finalisation record: late input digests and, when known, inv; emitted once inputs are settled and before end (spec \u00a72.2).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "inputs",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "receipt.inputs"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Every declared input as a descriptor: its path, its role when the tool distinguishes roles, and a content digest once read. A digest that arrives later is carried by receipt.inputs (spec \u00a72.2). Credential files are never inputs (\u00a72.2).",
+      "items": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "error": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$",
+            "description": "Why the input could not be read; no digest then."
+          }
+        },
+        "not": {
+          "type": "object",
+          "required": [
+            "sha256",
+            "error"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "inv": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Present when the identity could be computed (spec \u00a72.2)."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.receipt.inputs"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}
