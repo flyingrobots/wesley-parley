@@ -1,0 +1,16 @@
+#!/bin/sh
+# Tests must pass before a push: the Rust tests and, when the Python bindings' virtual environment
+# exists (python/.venv), the Python suite.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+cargo test --workspace --all-targets --locked
+if [ -d python ]; then
+  if [ -x python/.venv/bin/python ]; then
+    (
+      cd python
+      PYTHONPATH=src .venv/bin/python -W error -m unittest discover -s tests -t .
+    )
+  else
+    echo "pre-push: python/.venv not found; skipping the Python tests (see CONTRIBUTING.md)" >&2
+  fi
+fi

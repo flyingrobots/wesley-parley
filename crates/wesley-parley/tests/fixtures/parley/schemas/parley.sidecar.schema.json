@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.sidecar/1.0.0",
+  "title": "parley sidecar",
+  "description": "A receipt line standing in for a record stored beside the receipt because it exceeded the inline threshold (spec \u00a75).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "source",
+    "path",
+    "bytes",
+    "sha256",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "sidecar"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "source": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The seq of the record the sidecar holds."
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$",
+      "description": "Relative to the receipt's directory; never absolute, never escaping it."
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Length of the stored bytes."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256 of the stored bytes; not the semantic digest of \u00a77.1."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.sidecar"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

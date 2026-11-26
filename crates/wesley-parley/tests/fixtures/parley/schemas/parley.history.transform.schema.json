@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.history.transform/1.0.0",
+  "title": "parley history transform",
+  "description": "The opening line of a projected copy of a run on the shared history stream: every line of this run that follows on this stream is a projection of the receipt copy by the named transform, so a reader can tell a projected copy from a whole one and by what (spec §8, informative). Stream only: the receipt copy is never projected and never carries this line.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "name",
+    "sha256",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "history.transform"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec §1.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec §1.3). This line takes a seq of its own and reaches no other sink, so the receipt copy has no line at this seq."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution whose copy on this stream is a projection (spec §2.1)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the transform is called: the name its configuration gave it, or the function's own name."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "SHA-256, hex, of the transform's source text as the runtime renders it. It tells two projections apart and pins which one wrote this copy; it is not a build identity, and nothing fetches it."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.history.transform"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec §4.5, §4.6)."
+        }
+      }
+    }
+  }
+}

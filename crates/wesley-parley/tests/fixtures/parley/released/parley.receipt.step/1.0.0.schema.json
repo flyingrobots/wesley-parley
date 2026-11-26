@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.receipt.step/1.0.0",
+  "title": "parley receipt step",
+  "description": "One decision the program made while working, with its reason; receipt only (spec \u00a75).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "decision",
+    "because",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "receipt.step"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "decision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "because": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detail": {
+      "type": "object"
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.receipt.step"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

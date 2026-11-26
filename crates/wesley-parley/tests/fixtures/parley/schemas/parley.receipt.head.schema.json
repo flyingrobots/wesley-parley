@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.receipt.head/2.0.0",
+  "title": "parley receipt head",
+  "description": "First line of a receipt file. Carries what the bootstrap line deliberately omitted, so stdout stays small while the record stays complete.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "tool",
+    "v",
+    "argv",
+    "resolved",
+    "inputs",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "receipt.head"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter continues from the bootstrap line, which is seq 0 (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1). ULID or equivalent: unique per execution and lexicographically sortable."
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The program that wrote this receipt, so a receipt read alone says what produced it (spec \u00a75)."
+    },
+    "v": {
+      "type": "string",
+      "minLength": 1,
+      "description": "That program's own version; with tool, a component of the inv preimage (spec \u00a72.2) that a receipt read alone must carry."
+    },
+    "inv": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Content-addressed identity of the question (spec \u00a72.2); never includes a declared secret. Optional in v0.2: supplied when the tool documents its derivation and the identity is known at this point; never a placeholder (spec \u00a72.2)."
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1
+    },
+    "argv": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "As received, after \u00a75.3 redaction: a declared secret appears as the literal [redacted]."
+    },
+    "resolved": {
+      "type": "object",
+      "description": "After defaults, environment and path resolution. The gap between this and argv is where bugs live."
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Every declared input as a descriptor: its path, its role when the tool distinguishes roles, and a content digest once read. A digest that arrives later is carried by receipt.inputs (spec \u00a72.2). Credential files are never inputs (\u00a72.2).",
+      "items": {
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "error": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$",
+            "description": "Why the input could not be read; no digest then."
+          }
+        },
+        "not": {
+          "type": "object",
+          "required": [
+            "sha256",
+            "error"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "effects": {
+      "type": "object",
+      "properties": {
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "writes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network": {
+          "type": "boolean"
+        },
+        "idempotent": {
+          "type": "boolean"
+        }
+      }
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.receipt.head"
+        },
+        "version": {
+          "const": "2.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    },
+    "redacted": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Present and non-empty whenever a declared secret was supplied to the run; absent otherwise (spec \u00a75.3). Lists where the head carries a replaced value, and which credential sources were present.",
+      "properties": {
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Indexes into argv."
+        },
+        "resolved": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "json-pointer",
+            "minLength": 1
+          },
+          "description": "JSON Pointers (RFC 6901) into resolved."
+        },
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Names of declared environment variables that were present."
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Indexes into inputs whose path carried a replaced value."
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Logical names of declared credential sources that were present (spec \u00a75.3)."
+        }
+      },
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "argv"
+          ],
+          "properties": {
+            "argv": {
+              "type": "array",
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "resolved"
+          ],
+          "properties": {
+            "resolved": {
+              "type": "array",
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "inputs"
+          ],
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "env"
+          ],
+          "properties": {
+            "env": {
+              "type": "array",
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "sources"
+          ],
+          "properties": {
+            "sources": {
+              "type": "array",
+              "minItems": 1
+            }
+          }
+        }
+      ]
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "True when the run performed no subject-matter writes, no mutating remote action and no retention deletion (spec \u00a74.3). Absent means false."
+    }
+  }
+}

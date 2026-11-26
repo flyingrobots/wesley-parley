@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.cache.hit/1.0.0",
+  "title": "parley cache hit",
+  "description": "Emitted when a program answers from a prior receipt instead of recomputing (spec \u00a72.3).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "inv",
+    "served_run",
+    "receipt",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "cache.hit"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "inv": {
+      "type": "string",
+      "minLength": 1
+    },
+    "served_run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The run whose receipt supplied the answer."
+    },
+    "receipt": {
+      "type": "string",
+      "minLength": 1,
+      "description": "That receipt's path."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.cache.hit"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

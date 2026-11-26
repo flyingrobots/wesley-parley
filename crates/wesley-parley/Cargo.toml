@@ -1,0 +1,35 @@
+[package]
+name = "wesley-parley"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Wesley target for Parley: interprets Parley's @parley_* directives and renders Parley's message schemas and bindings"
+license = "Apache-2.0"
+readme = "../../README.md"
+repository = "https://github.com/flyingrobots/wesley-parley"
+homepage = "https://github.com/flyingrobots/wesley-parley#readme"
+keywords = ["graphql", "parley", "json-schema", "codegen", "wesley"]
+categories = ["compilers"]
+
+[lib]
+name = "wesley_parley"
+
+[[bin]]
+name = "wesley-parley"
+path = "src/main.rs"
+
+[dependencies]
+indexmap = "2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+thiserror = "2.0"
+wesley-core = { version = "=0.3.0-alpha.4", default-features = false }
+wesley-json-schema = { git = "https://github.com/flyingrobots/wesley-json-schema", rev = "7944714bc4e40968a29d593f963af32e6327190e" }
+wesley-typescript-syntax = { git = "https://github.com/flyingrobots/wesley-typescript", rev = "dca0cd373eaa7f1902fd49529103b219b41d54fa" }
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+wesley-rust-syntax = { git = "https://github.com/flyingrobots/wesley-rust", rev = "f623943c8dc226aa01e9b0d85f5f041b63e88a24" }
+
+[dev-dependencies]
+pretty_assertions = "1.4"
