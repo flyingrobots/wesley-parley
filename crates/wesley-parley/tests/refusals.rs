@@ -321,3 +321,14 @@ fn an_exclusive_rule_naming_one_field_twice_is_refused() {
         "{e}"
     );
 }
+
+#[test]
+fn a_when_rule_requiring_one_field_twice_is_refused() {
+    let e = refusal(&when_ir(
+        &json!({"require": ["reason", "reason"], "forbidOtherwise": false}),
+    ));
+    assert!(
+        e.contains("@parley_when") && e.contains("reason") && e.contains("twice"),
+        "{e}"
+    );
+}

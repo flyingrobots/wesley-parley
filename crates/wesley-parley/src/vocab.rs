@@ -421,6 +421,11 @@ fn when(
     if require.is_empty() && set.is_empty() {
         return fail(format!("{}: @parley_when requires or sets nothing", t.name));
     }
+    for (i, n) in require.iter().enumerate() {
+        if require[..i].contains(n) {
+            return fail(format!("{}: @parley_when requires {n} twice", t.name));
+        }
+    }
     for n in &require {
         shape(n)?;
     }
