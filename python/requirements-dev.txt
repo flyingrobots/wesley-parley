@@ -12,6 +12,6 @@ pathspec==1.1.1
 tomli==2.5.0 ; python_full_version < '3.11'
 typing-extensions==4.16.0
 
-# The runtime dependency, pinned to a commit of wesley-python's mvp branch
-# (flyingrobots/wesley-python#3) until it is released.
-wesley-python @ git+https://github.com/flyingrobots/wesley-python@7e72aff1e7610927aa65e36957eae59ef60ad6d2
+# The runtime dependency, pinned to its merged commit on wesley-python's main
+# (flyingrobots/wesley-python#3), until it is released.
+wesley-python @ git+https://github.com/flyingrobots/wesley-python@9ce948901abada83458b4b95f45547e74ff08c55

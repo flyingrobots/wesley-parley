@@ -24,6 +24,26 @@ use crate::Error;
 /// [`Error::Render`] when the syntax library refuses a declaration (for example a name that is
 /// not a TypeScript identifier).
 pub fn render(catalog: &Catalog) -> Result<String, Error> {
+    // `Line` is the union of every message, so no declared type may take the name.
+    let mut declared_names: Vec<&str> = catalog.objects.keys().map(String::as_str).collect();
+    declared_names.extend(
+        catalog
+            .objects
+            .values()
+            .flat_map(|o| o.fields.iter())
+            .filter_map(|f| match &f.value {
+                Value::StringEnum {
+                    type_name: Some(t), ..
+                } => Some(t.as_str()),
+                _ => None,
+            }),
+    );
+    if declared_names.contains(&"Line") {
+        return Err(Error::Render(
+            "a type named Line collides with Line, the union of every message; rename the type"
+                .to_string(),
+        ));
+    }
     let mut declarations = Vec::new();
 
     // Enum aliases first, in name order.
@@ -42,17 +62,10 @@ pub fn render(catalog: &Catalog) -> Result<String, Error> {
     }
 
     let message_objects: Vec<&str> = catalog.messages.iter().map(|m| m.object.as_str()).collect();
-    let refs: Vec<&str> = catalog
-        .objects
-        .values()
-        .flat_map(|o| o.fields.iter())
-        .filter_map(|f| match &f.value {
-            Value::MessageRef { object, .. } => Some(object.as_str()),
-            _ => None,
-        })
-        .collect();
+    // Every object but a message's own is declared, including one a `_schema` field points at:
+    // `_schema` itself renders as a literal, but an ordinary field may use the same type.
     for o in catalog.objects.values() {
-        if message_objects.contains(&o.name.as_str()) || refs.contains(&o.name.as_str()) {
+        if message_objects.contains(&o.name.as_str()) {
             continue;
         }
         declarations.push(interface(catalog, o, None));

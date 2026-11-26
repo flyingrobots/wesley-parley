@@ -9,22 +9,25 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const USAGE: &str = "usage:\n  wesley-parley json-schema --out <dir> [--ir <file>]   write <id>.schema.json for every message\n  wesley-parley typescript --out <file> [--ir <file>]   write the message types as one TypeScript module\n  wesley-parley model [--ir <file>]                     print the interpreted model as JSON\n\nThe IR is Wesley's (`wesley schema lower --json`), read from --ir or stdin.";
+const USAGE: &str = "usage:\n  wesley-parley json-schema --out <dir> [--ir <file>]   write <id>.schema.json for every message\n  wesley-parley typescript --out <file> [--ir <file>]   write the message types as one TypeScript module\n  wesley-parley rust --out <file> [--ir <file>]         write the message types as one Rust module\n  wesley-parley versions --released <dir> [--ir <file>] check every message version against the released snapshots\n  wesley-parley model [--ir <file>]                     print the interpreted model as JSON\n\nThe IR is Wesley's (`wesley schema lower --json`), read from --ir or stdin.";
 
 enum Command {
     JsonSchema { out: PathBuf },
     TypeScript { out: PathBuf },
+    Rust { out: PathBuf },
+    Versions { released: PathBuf },
     Model,
 }
 
 fn parse(mut args: impl Iterator<Item = String>) -> Result<(Command, Option<PathBuf>), String> {
     let command = args.next();
-    let (mut out, mut ir) = (None, None);
+    let (mut out, mut ir, mut released) = (None, None, None);
     while let Some(flag) = args.next() {
         let mut value = || args.next().ok_or_else(|| format!("{flag} needs a value"));
         match flag.as_str() {
             "--out" => out = Some(PathBuf::from(value()?)),
             "--ir" => ir = Some(PathBuf::from(value()?)),
+            "--released" => released = Some(PathBuf::from(value()?)),
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -34,6 +37,12 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<(Command, Option<Path
         },
         Some("typescript") => Command::TypeScript {
             out: out.ok_or("--out is required")?,
+        },
+        Some("rust") => Command::Rust {
+            out: out.ok_or("--out is required")?,
+        },
+        Some("versions") => Command::Versions {
+            released: released.ok_or("--released is required")?,
         },
         Some("model") if out.is_none() => Command::Model,
         Some("model") => return Err("model prints to stdout; it takes no --out".into()),
@@ -70,6 +79,32 @@ fn run(command: &Command, ir: Option<&PathBuf>) -> Result<(), String> {
         Command::TypeScript { out } => {
             let module = wesley_parley::typescript::render(&catalog).map_err(|e| e.to_string())?;
             std::fs::write(out, module).map_err(|e| format!("{}: {e}", out.display()))?;
+        }
+        Command::Rust { out } => {
+            let module = wesley_parley::rust::render(&catalog).map_err(|e| e.to_string())?;
+            std::fs::write(out, module).map_err(|e| format!("{}: {e}", out.display()))?;
+        }
+        Command::Versions { released } => {
+            let verdicts =
+                wesley_parley::versions::check(&catalog, released).map_err(|e| e.to_string())?;
+            let versions: std::collections::HashMap<&str, &str> = catalog
+                .messages
+                .iter()
+                .map(|m| (m.id.as_str(), m.version.as_str()))
+                .collect();
+            let mut failed = 0;
+            for (id, verdict) in &verdicts {
+                println!(
+                    "{id} {}: {verdict:?}",
+                    versions.get(id.as_str()).copied().unwrap_or("?")
+                );
+                if !verdict.is_ok() {
+                    failed += 1;
+                }
+            }
+            if failed > 0 {
+                return Err(format!("{failed} message version(s) break spec §4.5"));
+            }
         }
         Command::Model => {
             let value = serde_json::to_value(&catalog).map_err(|e| e.to_string())?;
