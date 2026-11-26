@@ -96,3 +96,16 @@ fn typescript_writes_the_golden_module() {
     assert_eq!(std::fs::read_to_string(&out).expect("written"), golden);
     std::fs::remove_file(&out).expect("cleaned");
 }
+
+#[test]
+fn rust_writes_the_golden_module() {
+    let out = std::env::temp_dir().join(format!("wesley-parley-rs-{}.rs", std::process::id()));
+    let o = run(&["rust", "--out", out.to_str().expect("utf8")], &ir_text());
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let golden = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/messages.rs"),
+    )
+    .expect("golden");
+    assert_eq!(std::fs::read_to_string(&out).expect("written"), golden);
+    std::fs::remove_file(&out).expect("cleaned");
+}

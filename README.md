@@ -11,13 +11,14 @@ The JSON Schema and TypeScript parts of the MVP exist, in `crates/wesley-parley`
 - **`vocab`** interprets the `@parley_*` directives of a Parley SDL (as lowered by Wesley) into a **`model::Catalog`**: every message, object, field, constraint and cross-field rule, checked. It refuses what it cannot render faithfully and names the type, field and directive. It is a port of Parley's own derivation (flyingrobots/parley `scripts/sdl-to-json-schema.ts` at `c80771c`), with its refusal tests.
 - **`json_schema`** renders each message's schema from the model and prints it with [wesley-json-schema](https://github.com/flyingrobots/wesley-json-schema)'s canonical printer.
 - **`typescript`** renders Parley's message types (flyingrobots/parley#120) through [wesley-typescript](https://github.com/flyingrobots/wesley-typescript)'s swc syntax tree: one interface per message and object, optional fields as `field?: T`, literal `event` and `_schema` types, string-literal unions for enums, and `Line`, the union of every message discriminated by `event`. The golden module is type-checked by `tsc --strict`, and a missing required field, a wrong `event` and a `null` optional are each proven type errors.
-- **The `wesley-parley` binary**: `json-schema --out DIR` writes `<id>.schema.json` per message; `typescript --out FILE` writes the TypeScript module; `model` prints the interpreted model as JSON, for renderers in other languages.
+- **`rust`** renders Parley's message types in Rust (flyingrobots/parley#123) as a `syn` tree printed through [wesley-rust](https://github.com/flyingrobots/wesley-rust)'s `prettyplease` printer: serde structs and enums with fully qualified standard paths; optional fields absent when `None`, never `null`; open objects keep unknown fields in a flattened `extra` map; closed ones refuse them; `SCHEMA_ID` and `SCHEMA_VERSION` per message. The golden module is compiled into the test suite, and real lines captured from `parley-emit` round-trip through it to the same JSON value.
+- **The `wesley-parley` binary**: `json-schema --out DIR` writes `<id>.schema.json` per message; `typescript --out FILE` writes the TypeScript module; `rust --out FILE` the Rust module; `model` prints the interpreted model as JSON, for renderers in other languages.
 
 ```sh
 wesley schema lower --schema schemas/parley.graphql --json | wesley-parley json-schema --out schemas/
 ```
 
-**Parley's real SDL, lowered by the published Wesley 0.3.0-alpha.4, reproduces all 17 of Parley's hand-written message schemas as JSON values** (the test fails naming each difference as a JSON Pointer). That is the condition flyingrobots/parley#119 needs to make the SDL the source. Rust and Python bindings (flyingrobots/parley#123, #121) come next, through the generic targets.
+**Parley's real SDL, lowered by the published Wesley 0.3.0-alpha.4, reproduces all 17 of Parley's hand-written message schemas as JSON values** (the test fails naming each difference as a JSON Pointer). That is the condition flyingrobots/parley#119 needs to make the SDL the source. Python bindings (flyingrobots/parley#121) come next, through wesley-python.
 
 ## Where it comes from
 

@@ -9,6 +9,7 @@
 
 pub mod json_schema;
 pub mod model;
+pub mod rust;
 pub mod typescript;
 pub mod vocab;
 

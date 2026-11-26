@@ -9,11 +9,12 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-const USAGE: &str = "usage:\n  wesley-parley json-schema --out <dir> [--ir <file>]   write <id>.schema.json for every message\n  wesley-parley typescript --out <file> [--ir <file>]   write the message types as one TypeScript module\n  wesley-parley model [--ir <file>]                     print the interpreted model as JSON\n\nThe IR is Wesley's (`wesley schema lower --json`), read from --ir or stdin.";
+const USAGE: &str = "usage:\n  wesley-parley json-schema --out <dir> [--ir <file>]   write <id>.schema.json for every message\n  wesley-parley typescript --out <file> [--ir <file>]   write the message types as one TypeScript module\n  wesley-parley rust --out <file> [--ir <file>]         write the message types as one Rust module\n  wesley-parley model [--ir <file>]                     print the interpreted model as JSON\n\nThe IR is Wesley's (`wesley schema lower --json`), read from --ir or stdin.";
 
 enum Command {
     JsonSchema { out: PathBuf },
     TypeScript { out: PathBuf },
+    Rust { out: PathBuf },
     Model,
 }
 
@@ -33,6 +34,9 @@ fn parse(mut args: impl Iterator<Item = String>) -> Result<(Command, Option<Path
             out: out.ok_or("--out is required")?,
         },
         Some("typescript") => Command::TypeScript {
+            out: out.ok_or("--out is required")?,
+        },
+        Some("rust") => Command::Rust {
             out: out.ok_or("--out is required")?,
         },
         Some("model") if out.is_none() => Command::Model,
@@ -69,6 +73,10 @@ fn run(command: &Command, ir: Option<&PathBuf>) -> Result<(), String> {
         }
         Command::TypeScript { out } => {
             let module = wesley_parley::typescript::render(&catalog).map_err(|e| e.to_string())?;
+            std::fs::write(out, module).map_err(|e| format!("{}: {e}", out.display()))?;
+        }
+        Command::Rust { out } => {
+            let module = wesley_parley::rust::render(&catalog).map_err(|e| e.to_string())?;
             std::fs::write(out, module).map_err(|e| format!("{}: {e}", out.display()))?;
         }
         Command::Model => {
