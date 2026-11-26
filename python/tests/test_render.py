@@ -108,7 +108,7 @@ def _ping_module(*fields: Field, enums: tuple[AliasDef, ...] = (), objects: tupl
             *objects,
             _ping_schema_ref(),
             _ping(*fields),
-            AliasDef("Line", Ref("Ping"), doc=LINE_DOC),
+            AliasDef("Line", UnionOf(Ref("Ping")), doc=LINE_DOC),
         ],
         doc=MODULE_DOC,
     )
