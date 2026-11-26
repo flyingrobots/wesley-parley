@@ -11,7 +11,7 @@
 use std::cmp::Ordering;
 use std::path::Path;
 
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::json_schema::documents;
 use crate::model::Catalog;
@@ -84,6 +84,14 @@ fn parse_version(s: &str) -> Option<Version> {
 ///
 /// [`Error::Released`] when a snapshot cannot be read or a version is not `MAJOR.MINOR.PATCH`.
 pub fn check(catalog: &Catalog, released: &Path) -> Result<Vec<(String, Verdict)>, Error> {
+    // A missing or unreadable snapshot root is an error, never an empty history: otherwise a
+    // misspelt path would pass every changed release as new.
+    if !released.is_dir() {
+        return Err(Error::Released(format!(
+            "{} is not a directory of released snapshots",
+            released.display()
+        )));
+    }
     let mut out = Vec::new();
     for doc in documents(catalog) {
         let current = parse_version(&doc.version).ok_or_else(|| {
@@ -137,8 +145,11 @@ pub fn check(catalog: &Catalog, released: &Path) -> Result<Vec<(String, Verdict)
 
 /// The released versions of one message, lowest first.
 fn released_versions(dir: &Path) -> Result<Vec<(Version, String)>, Error> {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return Ok(Vec::new());
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        // No directory for this message under a valid root: it has never been released.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(e) => return Err(Error::Released(format!("{}: {e}", dir.display()))),
     };
     let mut out = Vec::new();
     for entry in entries {
@@ -171,8 +182,8 @@ fn given_bump(from: Version, to: Version) -> Bump {
     }
 }
 
-/// The bump a change from the `old` schema to the `new` one needs.
-fn needed_bump(old: &Value, new: &Value) -> Bump {
+/// The bump a change from the `old` schema to the `new` one needs (both whole message schemas).
+pub fn needed_bump(old: &Value, new: &Value) -> Bump {
     let (old, new) = (without_identity(old), without_identity(new));
     if old == new {
         return Bump::None;
@@ -204,33 +215,88 @@ fn without_identity(schema: &Value) -> Value {
     s
 }
 
-fn without_descriptions(v: &Value) -> Value {
-    match v {
-        Value::Object(map) => Value::Object(
-            map.iter()
-                .filter(|(k, _)| k.as_str() != "description")
-                .map(|(k, v)| (k.clone(), without_descriptions(v)))
-                .collect(),
-        ),
-        Value::Array(items) => Value::Array(items.iter().map(without_descriptions).collect()),
-        other => other.clone(),
+/// Keywords whose value is one subschema.
+const ONE_SUBSCHEMA: &[&str] = &["items", "not", "if", "then", "else"];
+/// Keywords whose value is a list of subschemas.
+const SUBSCHEMA_LISTS: &[&str] = &["anyOf", "allOf", "oneOf"];
+
+/// A schema without its `description` annotations. Only schema nodes are walked: a property
+/// *named* `description` is a field, and a `const` or `enum` value is data, so neither is touched.
+fn without_descriptions(schema: &Value) -> Value {
+    let Value::Object(map) = schema else {
+        return schema.clone();
+    };
+    let mut out = Map::new();
+    for (k, v) in map {
+        let v = match (k.as_str(), v) {
+            ("description", _) => continue,
+            ("properties", Value::Object(props)) => Value::Object(
+                props
+                    .iter()
+                    .map(|(name, s)| (name.clone(), without_descriptions(s)))
+                    .collect(),
+            ),
+            (k, Value::Array(list)) if SUBSCHEMA_LISTS.contains(&k) => {
+                Value::Array(list.iter().map(without_descriptions).collect())
+            }
+            (k, s) if ONE_SUBSCHEMA.contains(&k) => without_descriptions(s),
+            (_, other) => other.clone(),
+        };
+        out.insert(k.clone(), v);
     }
+    Value::Object(out)
 }
 
-/// `new` with the top-level properties it adds that are not required taken out.
+/// `new` with every optional property it adds, at any depth, taken out: the properties of an
+/// object node that the matching `old` node lacks and the new node does not require. The two
+/// schemas are walked together through `properties`, single subschemas and subschema lists.
 fn without_new_optional_fields(old: &Value, new: &Value) -> Value {
-    let mut out = new.clone();
-    let required: Vec<&Value> = new
+    let (Value::Object(old_map), Value::Object(new_map)) = (old, new) else {
+        return new.clone();
+    };
+    let required: Vec<&Value> = new_map
         .get("required")
         .and_then(Value::as_array)
         .map(|r| r.iter().collect())
         .unwrap_or_default();
-    if let (Some(Value::Object(old_props)), Some(Value::Object(new_props))) =
-        (old.get("properties"), out.get_mut("properties"))
-    {
-        new_props.retain(|k, _| {
-            old_props.contains_key(k) || required.contains(&&Value::String(k.clone()))
-        });
+    let mut out = Map::new();
+    for (k, v) in new_map {
+        let v = match (k.as_str(), v, old_map.get(k)) {
+            ("properties", Value::Object(new_props), Some(Value::Object(old_props))) => {
+                Value::Object(
+                    new_props
+                        .iter()
+                        .filter(|(name, _)| {
+                            old_props.contains_key(*name)
+                                || required.contains(&&Value::String((*name).clone()))
+                        })
+                        .map(|(name, s)| {
+                            (
+                                name.clone(),
+                                old_props.get(name).map_or_else(
+                                    || s.clone(),
+                                    |o| without_new_optional_fields(o, s),
+                                ),
+                            )
+                        })
+                        .collect(),
+                )
+            }
+            (k, Value::Array(list), Some(Value::Array(old_list)))
+                if SUBSCHEMA_LISTS.contains(&k) && list.len() == old_list.len() =>
+            {
+                Value::Array(
+                    old_list
+                        .iter()
+                        .zip(list)
+                        .map(|(o, n)| without_new_optional_fields(o, n))
+                        .collect(),
+                )
+            }
+            (k, s, Some(o)) if ONE_SUBSCHEMA.contains(&k) => without_new_optional_fields(o, s),
+            (_, other, _) => other.clone(),
+        };
+        out.insert(k.clone(), v);
     }
-    out
+    Value::Object(out)
 }

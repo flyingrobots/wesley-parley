@@ -310,3 +310,14 @@ fn an_empty_any_non_empty_list_is_refused() {
         "{e}"
     );
 }
+
+#[test]
+fn an_exclusive_rule_naming_one_field_twice_is_refused() {
+    let mut v = tiny();
+    tiny_type(&mut v)["directives"]["parley_exclusive"] = json!({"fields": ["note", "note"]});
+    let e = refusal(&v);
+    assert!(
+        e.contains("@parley_exclusive") && e.contains("twice"),
+        "{e}"
+    );
+}

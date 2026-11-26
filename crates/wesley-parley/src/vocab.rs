@@ -321,6 +321,12 @@ fn rules(
                 ));
             }
         }
+        if a_name == b_name {
+            return fail(format!(
+                "@parley_exclusive on {} names {a_name} twice; it needs two different fields",
+                t.name
+            ));
+        }
         rules.exclusive = Some([a_name, b_name]);
     }
     if let Some(a) = arg(&t.directives, "parley_any_non_empty", &t.name)? {

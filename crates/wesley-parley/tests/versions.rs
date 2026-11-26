@@ -152,3 +152,55 @@ fn a_message_never_released_is_new() {
     );
     assert_eq!(verdict(&s, "parley.fresh"), Verdict::New);
 }
+
+fn snapshot(id: &str, version: &str) -> serde_json::Value {
+    let path = released().join(id).join(format!("{version}.schema.json"));
+    serde_json::from_str(&std::fs::read_to_string(path).expect("snapshot")).expect("json")
+}
+
+#[test]
+fn parleys_real_lens_1_1_0_release_is_a_minor_change_over_1_0_0() {
+    use wesley_parley::versions::needed_bump;
+    assert_eq!(
+        needed_bump(
+            &snapshot("parley.lens", "1.0.0"),
+            &snapshot("parley.lens", "1.1.0")
+        ),
+        Bump::Minor
+    );
+    assert_eq!(
+        needed_bump(
+            &snapshot("parley.query", "1.0.0"),
+            &snapshot("parley.query", "1.1.0")
+        ),
+        Bump::Minor
+    );
+}
+
+#[test]
+fn a_field_named_description_is_a_field_not_an_annotation() {
+    use wesley_parley::versions::needed_bump;
+    let old =
+        serde_json::json!({"type": "object", "properties": {"description": {"type": "string"}}});
+    let new =
+        serde_json::json!({"type": "object", "properties": {"description": {"type": "integer"}}});
+    assert_eq!(needed_bump(&old, &new), Bump::Major);
+    let described = serde_json::json!({"type": "object", "properties": {"description": {"type": "string", "description": "words"}}});
+    assert_eq!(needed_bump(&old, &described), Bump::Patch);
+}
+
+#[test]
+fn a_released_directory_that_does_not_exist_is_an_error_not_an_empty_history() {
+    let ir = wesley_core::lower_schema_sdl(&sdl()).expect("lowers");
+    let catalog = wesley_parley::catalog(&ir).expect("valid");
+    let r = wesley_parley::versions::check(
+        &catalog,
+        &manifest().join("tests/fixtures/parley/no-such-dir"),
+    );
+    assert!(r.is_err());
+    let r = wesley_parley::versions::check(
+        &catalog,
+        &manifest().join("tests/fixtures/parley/parley.graphql"),
+    );
+    assert!(r.is_err(), "a file is not a snapshot directory");
+}
