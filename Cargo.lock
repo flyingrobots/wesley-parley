@@ -1166,7 +1166,7 @@ dependencies = [
 [[package]]
 name = "wesley-json-schema"
 version = "0.1.0"
-source = "git+https://github.com/flyingrobots/wesley-json-schema?branch=mvp#62896bd1454a39874452d784d02219187f64c928"
+source = "git+https://github.com/flyingrobots/wesley-json-schema?rev=7944714bc4e40968a29d593f963af32e6327190e#7944714bc4e40968a29d593f963af32e6327190e"
 dependencies = [
  "serde_json",
  "thiserror 2.0.21",
@@ -1194,7 +1194,7 @@ dependencies = [
 [[package]]
 name = "wesley-rust-syntax"
 version = "0.1.0"
-source = "git+https://github.com/flyingrobots/wesley-rust?branch=syntax-crate#6a72d638958dd9a8b0be17d4ca14eb8b59a085e4"
+source = "git+https://github.com/flyingrobots/wesley-rust?rev=f623943c8dc226aa01e9b0d85f5f041b63e88a24#f623943c8dc226aa01e9b0d85f5f041b63e88a24"
 dependencies = [
  "prettyplease",
  "proc-macro2",

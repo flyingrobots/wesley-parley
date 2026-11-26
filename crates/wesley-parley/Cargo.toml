@@ -24,12 +24,12 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 thiserror = "2.0"
 wesley-core = { version = "=0.3.0-alpha.4", default-features = false }
-wesley-json-schema = { git = "https://github.com/flyingrobots/wesley-json-schema", branch = "mvp" }
+wesley-json-schema = { git = "https://github.com/flyingrobots/wesley-json-schema", rev = "7944714bc4e40968a29d593f963af32e6327190e" }
 wesley-typescript-syntax = { git = "https://github.com/flyingrobots/wesley-typescript", rev = "dca0cd373eaa7f1902fd49529103b219b41d54fa" }
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = { version = "2.0", features = ["full"] }
-wesley-rust-syntax = { git = "https://github.com/flyingrobots/wesley-rust", branch = "syntax-crate" }
+wesley-rust-syntax = { git = "https://github.com/flyingrobots/wesley-rust", rev = "f623943c8dc226aa01e9b0d85f5f041b63e88a24" }
 
 [dev-dependencies]
 pretty_assertions = "1.4"
