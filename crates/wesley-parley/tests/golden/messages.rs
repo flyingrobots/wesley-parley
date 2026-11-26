@@ -251,10 +251,18 @@ pub struct Error {
     /// What is wrong, in one sentence.
     pub problem: ::std::string::String,
     /// The value observed, when the failure is a threshold.
-    #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "::core::option::Option::is_none"
+    )]
     pub measured: ::core::option::Option<::serde_json::Value>,
     /// The threshold that was not met.
-    #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "::core::option::Option::is_none"
+    )]
     pub limit: ::core::option::Option<::serde_json::Value>,
     /// The lever to pull. Omit rather than invent one.
     #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
@@ -864,10 +872,18 @@ pub struct Warning {
     /// What is wrong, in one sentence.
     pub problem: ::std::string::String,
     /// The value observed, when the failure is a threshold.
-    #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "::core::option::Option::is_none"
+    )]
     pub measured: ::core::option::Option<::serde_json::Value>,
     /// The threshold that was not met.
-    #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "::core::option::Option::is_none"
+    )]
     pub limit: ::core::option::Option<::serde_json::Value>,
     /// The lever to pull. Omit rather than invent one.
     #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
@@ -983,4 +999,11 @@ impl Warning {
     pub const SCHEMA_ID: &'static str = "parley.warning";
     /// The schema version this type carries in `_schema.version`.
     pub const SCHEMA_VERSION: &'static str = "1.0.0";
+}
+/// Deserialises a present value, `null` included, as `Some`; an absent field stays `None`.
+fn deserialize_present<'de, D: ::serde::Deserializer<'de>>(
+    deserializer: D,
+) -> ::core::result::Result<::core::option::Option<::serde_json::Value>, D::Error> {
+    <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)
+        .map(::core::option::Option::Some)
 }

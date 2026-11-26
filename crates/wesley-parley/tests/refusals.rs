@@ -299,3 +299,14 @@ fn a_rule_literal_is_measured_in_characters_as_json_schema_does() {
     let e = refusal(&v);
     assert!(e.contains("set label") && e.contains("cannot hold"), "{e}");
 }
+
+#[test]
+fn an_empty_any_non_empty_list_is_refused() {
+    let mut v = tiny();
+    tiny_type(&mut v)["directives"]["parley_any_non_empty"] = json!({"fields": []});
+    let e = refusal(&v);
+    assert!(
+        e.contains("@parley_any_non_empty") && e.contains("at least one"),
+        "{e}"
+    );
+}

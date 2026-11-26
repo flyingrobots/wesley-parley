@@ -80,3 +80,17 @@ fn each_message_names_its_schema() {
         ("parley.end", "1.0.0")
     );
 }
+
+#[test]
+fn an_explicit_null_in_an_optional_json_field_survives_a_round_trip() {
+    let line = r#"{"event":"error","t":1,"seq":3,"run":"r","code":"x.y","problem":"p","measured":null,"_schema":{"id":"parley.error","version":"2.0.0"}}"#;
+    let parsed: messages::Error = serde_json::from_str(line).expect("parses");
+    assert_eq!(parsed.measured, Some(Value::Null), "a present null is kept");
+    assert_eq!(
+        serde_json::to_value(&parsed).expect("serialises"),
+        serde_json::from_str::<Value>(line).expect("json")
+    );
+    let absent: messages::Error =
+        serde_json::from_str(&line.replace(r#""measured":null,"#, "")).expect("parses");
+    assert_eq!(absent.measured, None, "an absent field is None");
+}

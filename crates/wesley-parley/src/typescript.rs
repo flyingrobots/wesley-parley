@@ -24,6 +24,26 @@ use crate::Error;
 /// [`Error::Render`] when the syntax library refuses a declaration (for example a name that is
 /// not a TypeScript identifier).
 pub fn render(catalog: &Catalog) -> Result<String, Error> {
+    // `Line` is the union of every message, so no declared type may take the name.
+    let mut declared_names: Vec<&str> = catalog.objects.keys().map(String::as_str).collect();
+    declared_names.extend(
+        catalog
+            .objects
+            .values()
+            .flat_map(|o| o.fields.iter())
+            .filter_map(|f| match &f.value {
+                Value::StringEnum {
+                    type_name: Some(t), ..
+                } => Some(t.as_str()),
+                _ => None,
+            }),
+    );
+    if declared_names.contains(&"Line") {
+        return Err(Error::Render(
+            "a type named Line collides with Line, the union of every message; rename the type"
+                .to_string(),
+        ));
+    }
     let mut declarations = Vec::new();
 
     // Enum aliases first, in name order.

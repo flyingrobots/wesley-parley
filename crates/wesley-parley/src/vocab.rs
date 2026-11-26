@@ -325,6 +325,12 @@ fn rules(
     }
     if let Some(a) = arg(&t.directives, "parley_any_non_empty", &t.name)? {
         let names = names_arg(&a, "fields", &t.name)?;
+        if names.is_empty() {
+            return fail(format!(
+                "@parley_any_non_empty on {} names no fields; it needs at least one",
+                t.name
+            ));
+        }
         for n in &names {
             let f = find_field(&o.fields, &t.name, n, "parley_any_non_empty")?;
             if !matches!(f.value, Value::List { .. }) {

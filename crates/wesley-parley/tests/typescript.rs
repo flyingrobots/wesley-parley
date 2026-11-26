@@ -134,3 +134,17 @@ type Tiny @parley_message(id: "parley.tiny", version: "1.0.0", title: "parley ti
     assert!(ts.contains("export interface SchemaRef {"), "{ts}");
     assert!(ts.contains("    previous: SchemaRef;"), "{ts}");
 }
+
+#[test]
+fn a_type_named_line_is_refused_rather_than_duplicated() {
+    let sdl = r#"
+type SchemaRef @parley_closed { id: String! version: String! }
+type Line @parley_message(id: "parley.line", version: "1.0.0", title: "parley line") @parley_open {
+  event: String! @parley_const(string: "line")
+  _schema: SchemaRef! @parley_message_ref
+}
+"#;
+    let ir = wesley_core::lower_schema_sdl(sdl).expect("lowers");
+    let e = typescript::render(&catalog(&ir).expect("valid")).expect_err("a collision");
+    assert!(e.to_string().contains("Line"), "{e}");
+}

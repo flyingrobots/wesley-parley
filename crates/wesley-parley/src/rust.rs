@@ -56,6 +56,23 @@ pub fn render(catalog: &Catalog) -> Result<String, Error> {
         });
     }
 
+    // An optional field holding any JSON value tells a present `null` from an absent field.
+    let keeps_null = catalog
+        .objects
+        .values()
+        .flat_map(|o| o.fields.iter())
+        .any(keeps_present_null);
+    if keeps_null {
+        items.push(parse_quote! {
+            /// Deserialises a present value, `null` included, as `Some`; an absent field stays `None`.
+            fn deserialize_present<'de, D: ::serde::Deserializer<'de>>(
+                deserializer: D,
+            ) -> ::core::result::Result<::core::option::Option<::serde_json::Value>, D::Error> {
+                <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer).map(::core::option::Option::Some)
+            }
+        });
+    }
+
     let file = syn::File {
         shebang: None,
         attrs: inner_doc_attrs(
@@ -185,10 +202,13 @@ fn field_tokens(o: &Object, f: &Field, rust: &str, enums: &Enums) -> TokenStream
             pub #name: #ty,
         }
     } else {
+        let present =
+            keeps_present_null(f).then(|| quote! { deserialize_with = "deserialize_present", });
+
         quote! {
             #(#docs)*
             #rename
-            #[serde(default, skip_serializing_if = "::core::option::Option::is_none")]
+            #[serde(default, #present skip_serializing_if = "::core::option::Option::is_none")]
             pub #name: ::core::option::Option<#ty>,
         }
     }
@@ -234,4 +254,10 @@ fn rust_type(o: &Object, f: &Field, v: &Value, enums: &Enums) -> TokenStream {
             quote! { ::std::vec::Vec<#item> }
         }
     }
+}
+
+/// An optional field that may hold any JSON value, `null` included: Parley's schema leaves it
+/// unconstrained, so a present `null` is data and must survive a round trip.
+fn keeps_present_null(f: &Field) -> bool {
+    !f.required && matches!(f.value, Value::Any)
 }
