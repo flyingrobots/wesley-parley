@@ -1,3 +1,4 @@
+/target/
 node_modules/
 dist/
 coverage/
@@ -15,3 +16,8 @@ coverage/
 
 # Local agent notes
 .claude/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
