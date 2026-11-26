@@ -10,6 +10,7 @@ Every pull request names a GitHub issue. If there is no issue for the change, op
 ## How changes are made
 
 - Enable the hooks once: `git config --local core.hooksPath scripts/hooks`. `pre-commit` runs `cargo fmt --check` and `cargo clippy -D warnings`; `pre-push` runs `cargo test`.
+- The hooks also lint and test the Python bindings when `python/.venv` exists. Set it up once with [uv](https://docs.astral.sh/uv/): `cd python && uv venv -p 3.9 .venv && uv pip install -p .venv -r requirements-dev.txt`. Then, in `python/`: `.venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy` lints, and `PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -t .` tests. The golden `python/tests/golden/messages.py` is rendered from `crates/wesley-parley/tests/golden/model.json`; after an intended change, rerun the suite with `WESLEY_UPDATE_GOLDEN=1` and review the diff.
 - Write a failing test first, then the change that makes it pass.
 - Build output as a syntax tree and print it with the printer named in the [README](README.md). A pull request that writes generated code as strings is not merged.
 - A new golden file is checked by the real toolchain in CI, as the README says.

@@ -1,5 +1,19 @@
 #!/bin/sh
-# Lint must pass before a commit: formatting and clippy with warnings as errors.
+# Lint must pass before a commit: formatting and clippy with warnings as errors, and, when the
+# Python bindings' virtual environment exists (python/.venv), ruff and mypy over python/.
 set -eu
+cd "$(git rev-parse --show-toplevel)"
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
+if [ -d python ]; then
+  if [ -x python/.venv/bin/python ]; then
+    (
+      cd python
+      .venv/bin/python -m ruff check .
+      .venv/bin/python -m ruff format --check .
+      .venv/bin/python -m mypy
+    )
+  else
+    echo "pre-commit: python/.venv not found; skipping the Python lint (see CONTRIBUTING.md)" >&2
+  fi
+fi
