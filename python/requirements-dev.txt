@@ -1,0 +1,17 @@
+# Development-only tools, pinned exactly (copied from wesley-python's requirements-dev.txt).
+# mypy 1.19.1 is the newest release that still installs on Python 3.9.
+mypy==1.19.1
+ruff==0.17.6
+
+# Transitive dependencies of mypy, pinned exactly.
+librt==0.16.0 ; python_full_version < '3.10' and platform_python_implementation != 'PyPy'
+librt==0.17.0 ; python_full_version >= '3.10' and platform_python_implementation != 'PyPy'
+mypy-extensions==1.1.0 ; python_full_version < '3.10'
+mypy-extensions==1.2.0 ; python_full_version >= '3.10'
+pathspec==1.1.1
+tomli==2.5.0 ; python_full_version < '3.11'
+typing-extensions==4.16.0
+
+# The runtime dependency, pinned to a commit of wesley-python's mvp branch
+# (flyingrobots/wesley-python#3) until it is released.
+wesley-python @ git+https://github.com/flyingrobots/wesley-python@7e72aff1e7610927aa65e36957eae59ef60ad6d2
