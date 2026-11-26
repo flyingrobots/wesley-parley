@@ -9,6 +9,7 @@
 
 pub mod json_schema;
 pub mod model;
+pub mod typescript;
 pub mod vocab;
 
 pub use vocab::catalog;
@@ -19,4 +20,7 @@ pub enum Error {
     /// The SDL breaks a rule of Parley's vocabulary.
     #[error("Parley vocabulary: {0}")]
     Vocabulary(String),
+    /// A syntax library refused what a renderer built.
+    #[error("rendering: {0}")]
+    Render(String),
 }

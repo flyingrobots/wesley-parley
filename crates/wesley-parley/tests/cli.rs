@@ -80,3 +80,19 @@ fn a_vocabulary_error_exits_1_and_names_the_rule() {
 fn a_missing_out_is_a_usage_error() {
     assert_eq!(run(&["json-schema"], "").status.code(), Some(2));
 }
+
+#[test]
+fn typescript_writes_the_golden_module() {
+    let out = std::env::temp_dir().join(format!("wesley-parley-ts-{}.ts", std::process::id()));
+    let o = run(
+        &["typescript", "--out", out.to_str().expect("utf8")],
+        &ir_text(),
+    );
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let golden = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden/messages.generated.ts"),
+    )
+    .expect("golden");
+    assert_eq!(std::fs::read_to_string(&out).expect("written"), golden);
+    std::fs::remove_file(&out).expect("cleaned");
+}
