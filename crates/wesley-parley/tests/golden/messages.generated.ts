@@ -145,6 +145,11 @@ export interface RunSection {
     /** The fields left out, whole, to bound the section's serialised JSON, in the order they were dropped, each at most once: resolved, then argv, then inv, then v, then tool. The bound is the reader's to state (parley-read: 512 UTF-8 bytes); a string or an object is never cut part-way. */
     dropped?: DroppedField[];
 }
+export interface SchemaRef {
+    id: string;
+    /** Full validation is against the schema for this exact id and version (spec §4.5, §4.6). */
+    version: string;
+}
 /**
  * Emitted when a program answers from a prior receipt instead of recomputing (spec §2.3).
  *

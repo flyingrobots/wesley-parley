@@ -42,17 +42,10 @@ pub fn render(catalog: &Catalog) -> Result<String, Error> {
     }
 
     let message_objects: Vec<&str> = catalog.messages.iter().map(|m| m.object.as_str()).collect();
-    let refs: Vec<&str> = catalog
-        .objects
-        .values()
-        .flat_map(|o| o.fields.iter())
-        .filter_map(|f| match &f.value {
-            Value::MessageRef { object, .. } => Some(object.as_str()),
-            _ => None,
-        })
-        .collect();
+    // Every object but a message's own is declared, including one a `_schema` field points at:
+    // `_schema` itself renders as a literal, but an ordinary field may use the same type.
     for o in catalog.objects.values() {
-        if message_objects.contains(&o.name.as_str()) || refs.contains(&o.name.as_str()) {
+        if message_objects.contains(&o.name.as_str()) {
             continue;
         }
         declarations.push(interface(catalog, o, None));
