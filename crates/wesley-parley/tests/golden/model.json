@@ -118,7 +118,7 @@
               "append",
               "delete"
             ],
-            "type_name": "BookkeepingOp"
+            "typeName": "BookkeepingOp"
           }
         },
         {
@@ -1605,7 +1605,7 @@
               "kind": "object",
               "name": "RecordId"
             },
-            "min_items": 1
+            "minItems": 1
           }
         },
         {
@@ -1758,7 +1758,7 @@
           "value": {
             "kind": "object",
             "name": "HeadRedacted",
-            "min_properties": 1
+            "minProperties": 1
           }
         },
         {
@@ -2262,7 +2262,7 @@
               "kind": "string",
               "minLength": 1
             },
-            "min_items": 1
+            "minItems": 1
           }
         }
       ],
@@ -2338,7 +2338,7 @@
               "undetermined",
               "succeeded"
             ],
-            "type_name": "RunOutcome"
+            "typeName": "RunOutcome"
           }
         },
         {
@@ -2351,7 +2351,7 @@
               "no_end_in_window",
               "end_status_unusable"
             ],
-            "type_name": "RunReason"
+            "typeName": "RunReason"
           }
         },
         {
@@ -2387,10 +2387,10 @@
                 "v",
                 "tool"
               ],
-              "type_name": "DroppedField"
+              "typeName": "DroppedField"
             },
-            "min_items": 1,
-            "max_items": 5
+            "minItems": 1,
+            "maxItems": 5
           }
         }
       ],

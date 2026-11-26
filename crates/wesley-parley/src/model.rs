@@ -61,7 +61,11 @@ pub struct Field {
 
 /// What a field (or a list's item) holds.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum Value {
     /// A JSON string.
     String(StringConstraints),
