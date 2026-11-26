@@ -1,0 +1,402 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.lens/1.1.0",
+  "title": "parley lens",
+  "description": "The lens a result carries: the asker, the view, the budget and the window that produced it, the query it answers, a stated bound on what the view loses, and the records it was built from by (run, seq) (spec §9, informative; decided in flyingrobots/parley#46). One lens line precedes the result it describes, so a later reader knows what it is looking at and can get back to the records.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "query",
+    "asker",
+    "view",
+    "budget",
+    "window",
+    "loss",
+    "records",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "lens"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec §1.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec §1.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to: the read itself, not the runs being read (spec §2.1)."
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Working period spanning runs. Supplied by the caller or inherited; never invented (spec §2.1)."
+    },
+    "query": {
+      "type": "object",
+      "required": [
+        "run",
+        "seq"
+      ],
+      "properties": {
+        "run": {
+          "type": "string",
+          "minLength": 1
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "description": "The recorded query this result answers, by (run, seq). Required: §9 records every query, and a result whose query was not recorded cannot be audited."
+    },
+    "asker": {
+      "type": "object",
+      "required": [
+        "tool"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cwd": {
+          "type": "string",
+          "pattern": "^/",
+          "minLength": 2
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "Echoed from the query: who the result is for."
+    },
+    "view": {
+      "enum": [
+        "what-ran",
+        "what-failed",
+        "what-changed",
+        "how-it-decided",
+        "everything"
+      ],
+      "description": "The view this result is. Echoed from the query, from the same closed set."
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ms": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "description": "The budget actually applied, including a default the query did not supply. Constitutive, not decoration: two results computed under different budgets are not comparable, so a lens without it does not identify the view that produced the result."
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "description": "The stretch of history the result covers, echoed from the query."
+    },
+    "fold": {
+      "type": "boolean",
+      "description": "Echoed from the query, present exactly when the query states it (flyingrobots/parley#133). false: the read folded nothing, so loss.folded is 0 and no runs section carries folded because none was allowed to, not because no runs repeated. Two results over one window, one folded and one not, are not comparable, so a lens says which it is."
+    },
+    "loss": {
+      "type": "object",
+      "required": [
+        "bound",
+        "excluded"
+      ],
+      "properties": {
+        "bound": {
+          "enum": [
+            "none",
+            "count-only"
+          ],
+          "description": "What kind of statement the loss is. none: nothing in the window was left out, so the result and the window hold the same records and excluded must be 0. Not restricted to the identity view: a view orders a result and filters none of it (flyingrobots/parley#49), so any view whose result reached the end of its order lost nothing. count-only: the excluded count is all that is known, which is a weak proxy. A measured distortion bound needs a translator to measure it and is a later version of this schema."
+        },
+        "excluded": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many records in the window the view did not name, whatever left them out: the budget, or a fold (folded). A proxy and a weak one: one withheld record can matter more than fifty, so this count cannot bound what the view loses."
+        },
+        "folded": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many of excluded were left out because their run was folded into another run of the same invocation and the same result, rather than by the budget (flyingrobots/parley#79): the records of every run the fold left out. A runs section's folded.records counts those its own run stands for, so the sections' folded.records sum to this number unless the budget left a run that stands for others out of records; that run has no section, so the sum is then smaller and this count is all the lens says of its fold. It depends on the window, the view and fold, never on the budget, so excluded minus folded is what the budget cut. At most excluded, which a schema cannot check; a reader can. Optional so that lines written under the earlier drafts still validate; parley-read always writes it, 0 included."
+        }
+      },
+      "description": "What the view loses against the records it was built from, so a later reader knows which questions this result can still answer and cannot mistake a digest for the whole. A digest that folded runs names fewer records than it stands for, and says how many in folded."
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "run"
+        ],
+        "properties": {
+          "run": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The run this section is about: one that records names."
+          },
+          "tool": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The run's receipt head's tool (spec §5), as the loader read it."
+          },
+          "v": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The run's receipt head's v (spec §5), as the loader read it."
+          },
+          "argv": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The run's receipt head's argv (spec §5), already redacted there (spec §5.3). Never cut part-way: when it does not fit the section's bound it is dropped whole and named in dropped."
+          },
+          "resolved": {
+            "type": "object",
+            "description": "The run's receipt head's resolved (spec §5): its interpretation after defaults, environment and path resolution, copied whole and already redacted there (spec §5.3), so a reader can tell, say, which commits a run compared without opening the head (flyingrobots/parley#90). Its shape is the tool's; the reader chooses none of its keys. Never cut part-way: when it does not fit the section's bound it is dropped whole, first of all fields, and named in dropped. Absent when the window does not hold the head or the head's resolved is not an object."
+          },
+          "inv": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The run's inv (spec §2.2): the head's, or else the window's receipt.inputs for the run. Absent when neither carries one; never a placeholder."
+          },
+          "outcome": {
+            "enum": [
+              "failed",
+              "undetermined",
+              "succeeded"
+            ],
+            "description": "What the records in the window establish about the run: failed for an error, a startup failure or a non-zero end; succeeded for an end of 0 and nothing against it; undetermined otherwise (spec §1.2a). It is the window's verdict, not the digest's: a run whose end the bound cut is still succeeded. Absent when the reader established none."
+          },
+          "reason": {
+            "enum": [
+              "no_end_in_window",
+              "end_status_unusable"
+            ],
+            "description": "Why the outcome is undetermined, present exactly when it is. no_end_in_window: the window holds no end for the run, which cannot say whether the run ended later or never did. end_status_unusable: the window holds an end whose status is not a number."
+          },
+          "head": {
+            "const": "not_in_window",
+            "description": "Present when the window does not hold the run's receipt head, so tool, v and argv are not known from it. Absent when it does."
+          },
+          "folded": {
+            "type": "object",
+            "required": [
+              "others",
+              "records"
+            ],
+            "properties": {
+              "others": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "How many other runs this section stands for, this run excluded: the section reads as this run plus others like it, so it stands for others + 1 runs (flyingrobots/parley#100)."
+              },
+              "records": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "How many records of those other runs, in the window, the fold left out of records, this run's own excluded; each is counted in loss.excluded and loss.folded."
+              },
+              "stands_for": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "The run ids of the other runs this section stands for, this run excluded, most recent first by the rule that makes this run the most recent of them: the latest t among each run's records in the window, then the greater run id, a run with no dated record last (flyingrobots/parley#133). It names runs, not records: the others' seq numbers are not listed and need not be this run's, so their records are read under a window that holds them with fold false, or opened by (run, seq) once their seq is known. As many as others, which a schema cannot check; a reader can. Optional, as every field a minor version adds is (spec §4.5); parley-read always writes it, never shortens it, never drops it to fit the section's bound and does not count it against that bound. It is part of the line budget.bytes bounds: when the line cannot hold it whole, no record of this run is named and this section is absent, and loss.folded still counts the fold."
+              }
+            },
+            "description": "Present when this run stands for other runs of the same invocation and the same result (flyingrobots/parley#79): runs with an equal inv (spec §2.2) whose outcome, reason, end status, error, warning and startup-failure codes and head's resolved are equal too, and whose result records are equal one for one in seq order: the tool's own records and any other record the protocol does not define, each page, each sidecar by its bytes and sha256, and a read's own lens without its session and the query it names, compared without the envelope's t, seq and run (flyingrobots/parley#133). A top-level session on a record of the tool's own or on a page is that record's own field and is compared (flyingrobots/parley#146). Under a view whose surface holds decision records those are equal as well, compared the same way: receipt.step under how-it-decided and everything, cache.hit under those two and what-ran. A decision record of a kind the view's surface does not hold is not compared, so runs that differ only in such records still stand for one another. Every comparison here is of the records the window holds: two runs whose results in the window differ are a divergence (spec §2.3) and do not stand for one another, and a run only partly inside the window is compared by the part the window holds, so runs that stand for one another under one window can differ under a wider one. A section marks a run the window did not hold whole in two cases: head not_in_window when the window does not hold the run's head, and outcome undetermined with reason no_end_in_window when it holds no end for the run and no failure either; a run the window shows to have failed is failed with or without its end, so its section does not say whether the window holds the end. This run is the most recent of them, by the latest t among each run's records in the window and, where those are equal, the greater run id; the others' records are not named, and stands_for lists the others' run ids. A run with no inv in the window, a run the window shows to be redacted (its head carries redacted, an end in the window states redacted true, or the window holds a redaction event of the run), and a run the window does not show to be unredacted, because it holds neither the run's receipt head nor an end that states redacted false, do not stand for another (spec §1.2a, §2.3). A run that stands for no other has no folded. Never dropped to fit the section's bound."
+          },
+          "dropped": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "resolved",
+                "argv",
+                "inv",
+                "v",
+                "tool"
+              ]
+            },
+            "description": "The fields left out, whole, to bound the section's serialised JSON, in the order they were dropped, each at most once: resolved, then argv, then inv, then v, then tool. The bound is the reader's to state (parley-read: 512 UTF-8 bytes); a string or an object is never cut part-way.",
+            "maxItems": 5
+          }
+        },
+        "if": {
+          "type": "object",
+          "required": [
+            "outcome"
+          ],
+          "properties": {
+            "outcome": {
+              "const": "undetermined"
+            }
+          }
+        },
+        "then": {
+          "type": "object",
+          "required": [
+            "reason"
+          ],
+          "properties": {
+            "reason": {
+              "enum": [
+                "no_end_in_window",
+                "end_status_unusable"
+              ]
+            }
+          }
+        },
+        "else": {
+          "not": {
+            "type": "object",
+            "required": [
+              "reason"
+            ],
+            "properties": {
+              "reason": {
+                "enum": [
+                  "no_end_in_window",
+                  "end_status_unusable"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "One section per run that records names, in the order records first names it, and none for any other run (flyingrobots/parley#83). It states once what is true of every record of the run — which invocation it was and what became of it — rather than on each entry. Read off the window's records when the lens is built, so it cannot drift from the head it summarises. Part of the line budget.bytes bounds. Optional so that lines written under the earlier drafts still validate; parley-read always writes it."
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "run",
+          "seq"
+        ],
+        "properties": {
+          "run": {
+            "type": "string",
+            "minLength": 1
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0 for a bootstrap or startup-failure line (spec §1.3)."
+          },
+          "event": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The named record's event token as the loader read it, a tool's own token included verbatim (flyingrobots/parley#77). Absent when the record carries none; never filled in."
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The named record's POSIX time in milliseconds (spec §1.3) as the loader read it. Absent when the record has no usable t; never a made-up one."
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$",
+            "description": "On an error or warning entry, the record's code (spec §6), so failures of one case read as one without opening them (flyingrobots/parley#83). Absent on any other record, and on a code that is not spec §6's shape; never filled in."
+          }
+        }
+      },
+      "description": "The records this result was built from, by (run, seq), never more than budget.records of them. Stored rather than recomputed: projecting down to a result is cheap and expanding back up may be impossible within a budget, so the way back has to be written here. A result is built from records, never from another result. Each entry may also carry a fixed summary of the record it names — event, t and, on an error or warning, its code — so a reader can choose what to open without opening it (flyingrobots/parley#77, flyingrobots/parley#83). What is true of the entry's whole run, its identity and outcome, is stated once in runs. The summary is read off the record when the lens is built and is part of the line budget.bytes bounds."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.lens"
+        },
+        "version": {
+          "const": "1.1.0",
+          "description": "Full validation is against the schema for this exact id and version (spec §4.5, §4.6)."
+        }
+      }
+    }
+  },
+  "if": {
+    "type": "object",
+    "required": [
+      "loss"
+    ],
+    "properties": {
+      "loss": {
+        "type": "object",
+        "required": [
+          "bound"
+        ],
+        "properties": {
+          "bound": {
+            "const": "none"
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "type": "object",
+    "properties": {
+      "loss": {
+        "type": "object",
+        "properties": {
+          "excluded": {
+            "const": 0
+          },
+          "folded": {
+            "const": 0
+          }
+        }
+      }
+    }
+  }
+}

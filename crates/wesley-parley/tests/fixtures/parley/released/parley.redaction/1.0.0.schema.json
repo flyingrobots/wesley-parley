@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.redaction/1.0.0",
+  "title": "parley redaction",
+  "description": "A receipt line recording a redaction not covered by the head's redacted field: in the head itself (in: 1) or in any later record or sidecar (spec \u00a75.3).",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "in",
+    "at",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "redaction"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec \u00a71.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to (spec \u00a72.1)."
+    },
+    "in": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The seq of the affected record: the head, a result, an error, a reasoning line, or the stored record a sidecar holds (its source)."
+    },
+    "at": {
+      "type": "string",
+      "format": "json-pointer",
+      "minLength": 1,
+      "description": "JSON Pointer (RFC 6901) within that record."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.redaction"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    }
+  }
+}

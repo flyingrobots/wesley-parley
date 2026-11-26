@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.query/1.0.0",
+  "title": "parley query",
+  "description": "A read against the history, recorded as an event: the asker it is for, the view it wants, the budget it will accept and the window it covers (spec §9, informative; the representation is decided in flyingrobots/parley#46 and read against the observer-geometry treatment in docs/topics/related-work/observer-geometry.md). The envelope's run is the read's own run; asker is who the read is for. A drill-down, which opens records a lens named, is the same message with records stating which.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "run",
+    "asker",
+    "view",
+    "budget",
+    "window",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "query"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec §1.3)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The run's single counter (spec §1.3)."
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The execution this line belongs to: the read itself, not the runs being read (spec §2.1)."
+    },
+    "session": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Working period spanning runs. Supplied by the caller or inherited; never invented (spec §2.1)."
+    },
+    "asker": {
+      "type": "object",
+      "required": [
+        "tool"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The calling program, named as in spec §2.1. Established from the caller's own identity or supplied as one argument; never invented, so a read that cannot establish it is refused."
+        },
+        "cwd": {
+          "type": "string",
+          "pattern": "^/",
+          "minLength": 2,
+          "description": "Absolute POSIX working directory the read was made from. Inferred from the process; omitted when it is not meaningful."
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The caller's current task id, supplied by the caller and never inferred (flyingrobots/parley#61); omitted when the caller does not state it. Not the session: a session is a working period, a task is a unit of work inside one."
+        }
+      },
+      "description": "Who the read is for, and the context the budget is inferred from. The asker is not the view: two askers requesting the same view under the same budget get the same answer."
+    },
+    "view": {
+      "enum": [
+        "what-ran",
+        "what-failed",
+        "what-changed",
+        "how-it-decided",
+        "everything"
+      ],
+      "description": "The shape of the answer, one token from a closed set. Never inferred: there is no privileged view, so a missing view is refused rather than guessed. Adding a token is a version of this schema."
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "records"
+      ],
+      "properties": {
+        "records": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The most records the answer may name. Required: a view with no bound collapses into \"return every record\"."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The most bytes the answer may occupy."
+        },
+        "ms": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The most wall-clock milliseconds the read may spend."
+        }
+      },
+      "description": "The size of answer the asker will accept. One documented default applies when it is not supplied, and the applied budget is carried verbatim by the result's lens, so a default is never invisible."
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Inclusive lower bound of the window, POSIX time in milliseconds. 0 means \"from the start of the history\"."
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Inclusive upper bound of the window, POSIX time in milliseconds. Never below from."
+        }
+      },
+      "description": "The stretch of history the read covers, always stated as two timestamps and echoed by the result's lens."
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Free text from the asker, recorded and never parsed. Nothing in the answer branches on it."
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "run",
+          "seq"
+        ],
+        "properties": {
+          "run": {
+            "type": "string",
+            "minLength": 1
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "0 for a bootstrap or startup-failure line (spec §1.3)."
+          }
+        }
+      },
+      "description": "Present only on a drill-down: the records the read asks for by (run, seq), the identity a parley.lens names them by, in the order asked (flyingrobots/parley#51). A drill-down answers with exactly these records in full, a sidecar's stored record included, and an outcome per id; the view and window are recorded and select nothing, budget.records is the number of ids asked, and budget.bytes, when stated, bounds the records opened: whole records in the order asked while their summed size stays within it, and an over_budget outcome with no contents for each id past it (flyingrobots/parley#78). Absent on a read that answers with a digest."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.query"
+        },
+        "version": {
+          "const": "1.0.0",
+          "description": "Full validation is against the schema for this exact id and version (spec §4.5, §4.6)."
+        }
+      }
+    }
+  }
+}

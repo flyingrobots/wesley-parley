@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flyingrobots.dev/parley/schemas/parley.run.bootstrap/1.1.1",
+  "title": "parley run bootstrap",
+  "description": "First line of stdout, emitted before work begins so a crashed run still names its receipt.",
+  "type": "object",
+  "required": [
+    "event",
+    "t",
+    "seq",
+    "tool",
+    "v",
+    "run",
+    "paths",
+    "_schema"
+  ],
+  "properties": {
+    "event": {
+      "const": "run"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "POSIX time in milliseconds (spec \u00a71.3)."
+    },
+    "seq": {
+      "const": 0,
+      "description": "The bootstrap line is always the first line the run emits, so it is the only line with a pinned seq."
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 1
+    },
+    "v": {
+      "type": "string",
+      "description": "The program's own version, distinct from _schema.version on the same line (spec \u00a73).",
+      "minLength": 1
+    },
+    "inv": {
+      "type": "string",
+      "description": "Content-addressed identity of the question: tool, version, normalised args, and the bytes of every declared input; never a declared secret (spec \u00a72.2, \u00a75.3). Optional in v0.2: supplied when the tool documents its derivation and the identity is known at this point; never a placeholder (spec \u00a72.2).",
+      "minLength": 1
+    },
+    "run": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique, lexicographically sortable identity of this execution."
+    },
+    "session": {
+      "type": "string",
+      "description": "Working period spanning runs. Supplied by the caller or inherited.",
+      "minLength": 1
+    },
+    "paths": {
+      "type": "object",
+      "required": [
+        "receipt"
+      ],
+      "properties": {
+        "receipt": {
+          "type": "string",
+          "pattern": "^/",
+          "minLength": 2,
+          "description": "Absolute path of the receipt file for this run (spec \u00a75). The only path the protocol defines; a program may add others it documents."
+        }
+      },
+      "description": "Files this run writes."
+    },
+    "_schema": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "parley.run.bootstrap"
+        },
+        "version": {
+          "const": "1.1.1",
+          "description": "Full validation is against the schema for this exact id and version (spec \u00a74.5, \u00a74.6)."
+        }
+      }
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "True when the run performed no subject-matter writes, no mutating remote action and no retention deletion (spec \u00a74.3). Absent means false."
+    }
+  }
+}

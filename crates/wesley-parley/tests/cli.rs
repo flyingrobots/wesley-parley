@@ -109,3 +109,27 @@ fn rust_writes_the_golden_module() {
     assert_eq!(std::fs::read_to_string(&out).expect("written"), golden);
     std::fs::remove_file(&out).expect("cleaned");
 }
+
+#[test]
+fn versions_passes_parleys_sdl_and_fails_a_changed_release() {
+    let released = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/parley/released");
+    let released = released.to_str().expect("utf8");
+    let o = run(&["versions", "--released", released], &ir_text());
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    assert!(String::from_utf8_lossy(&o.stdout).contains("parley.end 1.0.0: Released"));
+
+    let sdl = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/parley/parley.graphql"),
+    )
+    .expect("sdl")
+    .replacen(
+        "(spec §3.3).\"\n  redacted: Boolean!\n",
+        "(spec §3.3).\"\n  redacted: Boolean!\n  x: String!\n",
+        1,
+    );
+    let ir =
+        serde_json::to_string(&wesley_core::lower_schema_sdl(&sdl).expect("lowers")).expect("ir");
+    let o = run(&["versions", "--released", released], &ir);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stdout).contains("parley.end 1.0.0: ChangedAfterRelease"));
+}

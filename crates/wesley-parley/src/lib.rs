@@ -11,6 +11,7 @@ pub mod json_schema;
 pub mod model;
 pub mod rust;
 pub mod typescript;
+pub mod versions;
 pub mod vocab;
 
 pub use vocab::catalog;
@@ -24,4 +25,7 @@ pub enum Error {
     /// A syntax library refused what a renderer built.
     #[error("rendering: {0}")]
     Render(String),
+    /// A released snapshot could not be read.
+    #[error("released snapshots: {0}")]
+    Released(String),
 }
