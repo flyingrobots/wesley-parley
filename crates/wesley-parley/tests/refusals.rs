@@ -249,3 +249,53 @@ fn an_ir_of_another_version_is_refused() {
     v["version"] = json!("2.0.0");
     assert!(refusal(&v).contains("2.0.0"));
 }
+
+#[test]
+fn a_cycle_of_nested_objects_is_refused_not_recursed() {
+    let mut v = tiny();
+    v["types"].as_array_mut().expect("types").push(json!({ "name": "Node", "kind": "OBJECT", "directives": { "parley_open": true }, "fields": [
+        { "name": "next", "type": { "base": "Node", "nullable": true, "isList": false }, "directives": { "parley_optional": true } }
+    ] }));
+    tiny_type(&mut v)["fields"].as_array_mut().expect("fields").push(json!({
+        "name": "node", "type": { "base": "Node", "nullable": true, "isList": false }, "directives": { "parley_optional": true }
+    }));
+    let e = refusal(&v);
+    assert!(e.contains("Node") && e.contains("cycle"), "{e}");
+}
+
+#[test]
+fn a_message_id_that_is_not_a_single_path_component_is_refused() {
+    for id in ["../victim", "/abs", "a/b", "a\\b", "..", ".", "", ".hidden"] {
+        let mut v = tiny();
+        tiny_type(&mut v)["directives"]["parley_message"]["id"] = json!(id);
+        let e = refusal(&v);
+        assert!(e.contains("message id"), "{id:?}: {e}");
+    }
+}
+
+#[test]
+fn two_value_directives_on_one_field_are_refused() {
+    let mut v = tiny();
+    tiny_type(&mut v)["fields"][0]["directives"]["parley_enum"] = json!({"values": ["b"]});
+    let e = refusal(&v);
+    assert!(
+        e.contains("Tiny.event") && e.contains("@parley_const") && e.contains("@parley_enum"),
+        "{e}"
+    );
+}
+
+#[test]
+fn a_rule_literal_is_measured_in_characters_as_json_schema_does() {
+    let mut v = when_ir(
+        &json!({"guarded": true, "forbidOtherwise": false, "set": {"label": "\u{1F600}"}, "require": []}),
+    );
+    v["types"][2]["fields"]
+        .as_array_mut()
+        .expect("fields")
+        .push(json!({
+            "name": "label", "type": { "base": "String", "nullable": true, "isList": false },
+            "directives": { "parley_optional": true, "parley_minLength": { "value": 2 } }
+        }));
+    let e = refusal(&v);
+    assert!(e.contains("set label") && e.contains("cannot hold"), "{e}");
+}

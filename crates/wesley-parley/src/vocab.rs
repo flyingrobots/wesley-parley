@@ -133,6 +133,8 @@ fn names_arg(args: &Args, key: &str, at: &str) -> Result<Vec<String>, Error> {
 struct Context<'a> {
     types: BTreeMap<&'a str, &'a TypeDefinition>,
     objects: IndexMap<String, Object>,
+    /// Object types being interpreted, outermost first, to refuse a cycle instead of recursing.
+    visiting: Vec<String>,
 }
 
 struct Identity {
@@ -157,6 +159,7 @@ pub fn catalog(ir: &WesleyIR) -> Result<Catalog, Error> {
     let mut cx = Context {
         types: ir.types.iter().map(|t| (t.name.as_str(), t)).collect(),
         objects: IndexMap::new(),
+        visiting: Vec::new(),
     };
     let mut messages = Vec::new();
     let mut seen = HashSet::new();
@@ -168,6 +171,7 @@ pub fn catalog(ir: &WesleyIR) -> Result<Catalog, Error> {
             id: string_arg(&msg, "id", &t.name)?,
             version: string_arg(&msg, "version", &t.name)?,
         };
+        check_message_id(&t.name, &identity.id)?;
         if !seen.insert(identity.id.clone()) {
             return fail(format!(
                 "{}: message {} is declared twice",
@@ -371,8 +375,8 @@ fn when(
                 .types
                 .get(name.as_str())
                 .ok_or_else(|| Error::Vocabulary(format!("unknown type {name}")))?;
-            let nested = object(cx, def, None)?;
-            parent_fields = nested.fields;
+            ensure_object(cx, def)?;
+            parent_fields = cx.objects[name.as_str()].fields.clone();
             parent_name = name.clone();
         }
     }
@@ -445,8 +449,7 @@ fn check_value(v: &Json, field: &Value, at: &str) -> Result<(), Error> {
                         "{at} is {v}, but a literal cannot be checked against a pattern here"
                     ));
                 }
-                c.min_length
-                    .is_none_or(|m| s.encode_utf16().count() as u64 >= m)
+                c.min_length.is_none_or(|m| s.chars().count() as u64 >= m)
             }
             None => false,
         },
@@ -493,6 +496,16 @@ fn field(
         return fail(format!("{at}: list items are never null"));
     }
 
+    let defining: Vec<&str> = ["parley_const", "parley_message_ref", "parley_enum"]
+        .into_iter()
+        .filter(|n| d.contains_key(*n))
+        .collect();
+    if defining.len() > 1 {
+        return fail(format!(
+            "{at}: @{} and @{} both define the value; a field takes one",
+            defining[0], defining[1]
+        ));
+    }
     let mut value = if let Some(lit) = arg(d, "parley_const", &at)? {
         if lit.len() != 1 {
             return fail(format!(
@@ -686,10 +699,22 @@ fn message_ref(
 }
 
 fn ensure_object(cx: &mut Context<'_>, def: &TypeDefinition) -> Result<(), Error> {
-    if !cx.objects.contains_key(&def.name) {
-        let o = object(cx, def, None)?;
-        cx.objects.insert(def.name.clone(), o);
+    if cx.objects.contains_key(&def.name) {
+        return Ok(());
     }
+    if let Some(start) = cx.visiting.iter().position(|n| *n == def.name) {
+        let mut cycle = cx.visiting[start..].to_vec();
+        cycle.push(def.name.clone());
+        return fail(format!(
+            "{}: the object types form a cycle ({}), which has no inline JSON Schema rendering",
+            def.name,
+            cycle.join(" -> ")
+        ));
+    }
+    cx.visiting.push(def.name.clone());
+    let o = object(cx, def, None);
+    cx.visiting.pop();
+    cx.objects.insert(def.name.clone(), o?);
     Ok(())
 }
 
@@ -746,5 +771,21 @@ fn base(cx: &mut Context<'_>, at: &str, name: &str) -> Result<Value, Error> {
         other => fail(format!(
             "{at}: {other:?} {name} has no JSON Schema rendering here"
         )),
+    }
+}
+
+/// A message id names a file (`<id>.schema.json`), so it must be one safe path component.
+fn check_message_id(type_name: &str, id: &str) -> Result<(), Error> {
+    let safe = !id.is_empty()
+        && !id.starts_with('.')
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+    if safe {
+        Ok(())
+    } else {
+        fail(format!(
+            "{type_name}: message id {id:?} is not one path component of letters, digits, '.', '_' and '-' that does not start with '.'"
+        ))
     }
 }
