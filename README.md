@@ -2,11 +2,11 @@
 
 A [Wesley](https://github.com/flyingrobots/wesley) target that emits Parley bindings for tool authors: a typed emit function and a typed reader for each message a tool declares, the `_schema` stamp filled in, and the message's JSON Schema in Parley's envelope.
 
-Wesley compiles GraphQL SDL into a versioned intermediate representation (IR). It does not emit code itself: every output language is its own repository, run by Wesley as an external target over the IR. The decision is recorded in flyingrobots/parley#116, and the move of the emitters out of Wesley is flyingrobots/wesley#882.
+Wesley compiles GraphQL SDL into an intermediate representation (IR), and does nothing else: it attaches no meaning to any directive and runs no targets. Every output language is its own repository, a standalone program and library that reads the IR (`wesley schema lower --json`). This one owns **Parley's vocabulary**: the `@parley_*` directives Parley declares in its own SDL mean something here and nowhere else. It renders through the generic targets ([wesley-json-schema](https://github.com/flyingrobots/wesley-json-schema), [wesley-rust](https://github.com/flyingrobots/wesley-rust), [wesley-typescript](https://github.com/flyingrobots/wesley-typescript), [wesley-python](https://github.com/flyingrobots/wesley-python)). The decisions are recorded in flyingrobots/parley#116 and flyingrobots/wesley#882.
 
 ## Status
 
-Not started. This repository holds the plan and its rules; the first code waits on the versioned IR contract (flyingrobots/wesley#881) and on Wesley running external targets (flyingrobots/wesley#880).
+Not started. This repository holds the plan and its rules; the first code waits on the versioned IR contract (flyingrobots/wesley#881).
 
 ## Where it comes from
 
@@ -18,10 +18,10 @@ The output is built as a syntax tree of the target language and printed by that 
 
 | Concern | Choice |
 | --- | --- |
-| Written in | TypeScript, run with Bun |
-| Syntax tree | the TypeScript compiler API (`ts.factory`) |
-| Printer | `ts.createPrinter` |
-| Checked by | the TypeScript compiler on every golden file, and a golden tool run through `@flyingrobots/parley-emit` whose output the Parley doctor accepts |
+| Written in | Rust (stable), plus a Python module for the Python bindings |
+| Syntax tree | each language's, through the generic targets: `serde_json` values (wesley-json-schema), `syn` (wesley-rust), `oxc_ast` (wesley-typescript), stdlib `ast` (wesley-python) |
+| Printer | each language's own: canonical `serde_json`, `prettyplease`, `oxc_codegen`, `ast.unparse` |
+| Checked by | each language's toolchain on every golden file (JSON Schema meta-schema, `cargo check`, `tsc --strict`, `py_compile` and a type checker), Parley's 17 released schemas reproduced as JSON values, and a golden tool run through `@flyingrobots/parley-emit` whose output the Parley doctor accepts |
 
 Rules every change keeps:
 
