@@ -56,14 +56,11 @@ done
 # dependency on the staged tree, and the lockfile's git sources are dropped (a package without a
 # source is a path package), so no URL is ever resolved or fetched.
 wp="$ctx/src/wesley-parley"
-sed -i.bak -E \
-  -e 's#^wesley-json-schema = \{ git = [^}]*\}#wesley-json-schema = { path = "../../../wesley-json-schema/crates/wesley-json-schema" }#' \
-  -e 's#^wesley-typescript-syntax = \{ git = [^}]*\}#wesley-typescript-syntax = { path = "../../../wesley-typescript/crates/wesley-typescript-syntax" }#' \
-  -e 's#^wesley-rust-syntax = \{ git = [^}]*\}#wesley-rust-syntax = { path = "../../../wesley-rust/crates/wesley-rust-syntax" }#' \
-  "$wp/crates/wesley-parley/Cargo.toml"
-sed -i.bak -E '/^source = "git\+https:\/\/github\.com\/flyingrobots\/wesley-/d' "$wp/Cargo.lock"
-sed -i.bak -E '/^wesley-python @ git\+/d' "$wp/python/requirements-dev.txt"
-rm -f "$wp/crates/wesley-parley/Cargo.toml.bak" "$wp/Cargo.lock.bak" "$wp/python/requirements-dev.txt.bak"
+# perl -pi edits in place and leaves no backup file behind (scratch files under /tmp are never
+# deleted by this script).
+perl -pi -e 's#^wesley-json-schema = \{ git = [^}]*\}#wesley-json-schema = { path = "../../../wesley-json-schema/crates/wesley-json-schema" }#; s#^wesley-typescript-syntax = \{ git = [^}]*\}#wesley-typescript-syntax = { path = "../../../wesley-typescript/crates/wesley-typescript-syntax" }#; s#^wesley-rust-syntax = \{ git = [^}]*\}#wesley-rust-syntax = { path = "../../../wesley-rust/crates/wesley-rust-syntax" }#' "$wp/crates/wesley-parley/Cargo.toml"
+perl -ni -e 'print unless /^source = "git\+https:\/\/github\.com\/flyingrobots\/wesley-/' "$wp/Cargo.lock"
+perl -ni -e 'print unless /^wesley-python @ git\+/' "$wp/python/requirements-dev.txt"
 
 cp "$here/Dockerfile" "$here/run.sh" "$ctx/"
 if grep -rIlE --exclude=MANIFEST.tsv -e 'git\+(https|ssh)://' -e '\{ *git *= *"' -e 'url = (https|git@)' "$ctx/src" >/dev/null 2>&1; then

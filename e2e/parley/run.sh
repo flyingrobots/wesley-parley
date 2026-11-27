@@ -6,8 +6,10 @@
 # any step failed. Generated files go under /out (mount it to keep them).
 set -uo pipefail
 
-out=/out
+# Each run writes to its own new directory under the mount; nothing is ever deleted.
+out="/out/run-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$out"
+echo "output: $out"
 results=()
 failed=0
 
@@ -46,7 +48,7 @@ lower() { wesley schema lower --schema "$sdl" --json > "$out/ir.json"; }
 
 # 2. The generated schemas equal the hand-written ones as JSON values (rule (A)).
 schemas_equal() {
-  rm -rf "$out/schemas" && wesley-parley json-schema --ir "$out/ir.json" --out "$out/schemas" || return 1
+  wesley-parley json-schema --ir "$out/ir.json" --out "$out/schemas" || return 1
   local n=0 bad=0 f id
   for f in schemas/*.schema.json; do
     id="$(basename "$f")"
@@ -93,7 +95,7 @@ typescript() {
   # run Parley's compiler from there: with no tsconfig.json in the directory, files on the command
   # line are what it checks.
   local tsc="$PWD/node_modules/.bin/tsc" dir="$out/ts-uses" fixtures=/src/wesley-parley/crates/wesley-parley/tests/typescript
-  rm -rf "$dir" && mkdir -p "$dir/golden" "$dir/typescript/pass" "$dir/typescript/fail"
+  mkdir -p "$dir/golden" "$dir/typescript/pass" "$dir/typescript/fail"
   cp "$out/messages.generated.ts" "$dir/golden/"
   cp "$fixtures/pass/"*.ts "$dir/typescript/pass/"
   cp "$fixtures/fail/"*.ts "$dir/typescript/fail/"
