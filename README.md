@@ -26,6 +26,10 @@ wesley schema lower --schema schemas/parley.graphql --json | wesley-parley json-
 
 Parley ([flyingrobots/parley](https://github.com/flyingrobots/parley)) is a specification of JSON Lines messages for agent-facing command-line tools. A tool author today writes each result message's JSON Schema by hand and repeats its id and version as strings, and the emitted payload is untyped. This target generates those from the tool's SDL, and enforces Parley's per-message versioning (spec §4.5) against the released snapshots. Parley stays the definition of the protocol: this target conforms to the spec and never defines it.
 
+## End-to-end check
+
+[`e2e/parley`](e2e/parley/README.md) builds Parley with the pinned Wesley and this target in a hermetic Docker image, with the network disabled, and proves Parley's gate, its 17 schemas, its version check and its TypeScript, Python and Rust bindings. Run it before every release.
+
 ## How it generates code
 
 The output is built as a syntax tree of the target language and printed by that language's printer. There is no string templating and no regex anywhere in the generator.
