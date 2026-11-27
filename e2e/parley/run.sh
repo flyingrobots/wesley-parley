@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+# Each check is a function passed to `step` by name, which shellcheck cannot see.
+# shellcheck disable=SC2329
 # The end-to-end check, run inside the hermetic image with --network none, in a clone of Parley.
 # Each step reports PASS or FAIL; the run continues so one pass shows every result, and exits 1 if
 # any step failed. Generated files go under /out (mount it to keep them).
 set -uo pipefail
-# Each check below is a function passed to `step` by name, which shellcheck cannot see.
-# shellcheck disable=SC2329
 
 out=/out
 mkdir -p "$out"
