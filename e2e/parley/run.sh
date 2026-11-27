@@ -3,6 +3,8 @@
 # Each step reports PASS or FAIL; the run continues so one pass shows every result, and exits 1 if
 # any step failed. Generated files go under /out (mount it to keep them).
 set -uo pipefail
+# Each check below is a function passed to `step` by name, which shellcheck cannot see.
+# shellcheck disable=SC2329
 
 out=/out
 mkdir -p "$out"
@@ -21,6 +23,8 @@ step() {
     *) results+=("FAIL      $name"); failed=$((failed + 1)) ;;
   esac
 }
+
+count_files() { find "$1" -maxdepth 1 -type f | wc -l | tr -d ' '; }
 
 sdl=schemas/parley.graphql
 pin="$(jq -r .config.wesley package.json)"
@@ -52,8 +56,8 @@ schemas_equal() {
       bad=$((bad + 1))
     fi
   done
-  echo "$((n - bad)) of $n schemas equal as JSON values; $(ls "$out/schemas" | wc -l) generated"
-  [ "$bad" -eq 0 ] && [ "$n" -eq 17 ] && [ "$(ls "$out/schemas" | wc -l)" -eq "$n" ]
+  echo "$((n - bad)) of $n schemas equal as JSON values; $(count_files "$out/schemas") generated"
+  [ "$bad" -eq 0 ] && [ "$n" -eq 17 ] && [ "$(count_files "$out/schemas")" -eq "$n" ]
 }
 
 # 3. Every message version checks against the released snapshots (spec §4.5).
@@ -103,7 +107,7 @@ typescript() {
       ok=1
     fi
   done
-  [ "$ok" -eq 0 ] && echo "every invalid use is a type error ($(ls "$dir/typescript/fail" | wc -l))"
+  [ "$ok" -eq 0 ] && echo "every invalid use is a type error ($(count_files "$dir/typescript/fail"))"
   return "$ok"
 }
 
